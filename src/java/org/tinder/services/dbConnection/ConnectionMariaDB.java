@@ -17,7 +17,7 @@ public class ConnectionMariaDB {
     public Connection open() {
         String user = "admin";
         String password = "thermomaria";
-        String url = "jdbc:mariadb://127.0.0.1:3306/helpDesk";
+        String url = "jdbc:mariadb://127.0.0.1:3306/tinder_app";
         String parametros = "?useSSL=false&useUnicode=true&characterEncoding=utf-8";
         try {
             Class.forName("org.mariadb.jdbc.Driver");
