@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tinder.services.dbConnection.ConnectionMariaDB;
 import org.tinder.services.model.Usuario;
+import org.tinder.services.service.TokenService;
 
 /**
  *
@@ -18,7 +19,7 @@ import org.tinder.services.model.Usuario;
  */
 public class UsuarioRepository {
     
-    
+
      public List<Usuario> getAll(){
      List<Usuario> listUsers = new ArrayList<>();
      String query = "SELECT * FROM usuarios;";
@@ -87,6 +88,33 @@ public class UsuarioRepository {
               e.printStackTrace();
               return "ERROR";
          }
+     }
+     
+     public Usuario buscarPorCorreo(String email){
+        Usuario usuario = new Usuario();
+     String query = "SELECT * FROM usuarios u WHERE u.email LIKE '%"+ email + "%';";
+        try {
+               ConnectionMariaDB connMysql = new ConnectionMariaDB();
+            Connection conn = connMysql.open();
+            PreparedStatement pstm = conn.prepareStatement(query);
+            ResultSet rs =  pstm.executeQuery();
+            while (rs.next()){
+                usuario.setId_usuario(rs.getInt("id_usuario"));
+                usuario.setEmail(rs.getString("email"));
+                usuario.setNombre(rs.getString("nombre"));
+                usuario.setPassword(rs.getString("password"));
+              //  u.setToken(rs.getString("token"));
+                //u.setLastConnection(rs.getString("lastConnection"));
+                
+                
+                
+            }
+            return usuario;
+            
+        } catch (Exception e) {
+            System.out.println("Error:" + e);
+            return usuario;
+        }
      }
     
 }

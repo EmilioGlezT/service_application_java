@@ -15,9 +15,10 @@ import java.util.List;
 import org.tinder.services.model.Usuario;
 import org.tinder.services.service.UsuarioService;
 import com.google.gson.Gson;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.QueryParam;
 import org.tinder.services.model.ErrorResponse;
 import org.tinder.services.model.SuccessResponse;
-
 /**
  *
  * @author emilio
@@ -29,25 +30,22 @@ public class UsuarioController {
     @Path("login")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validar(@FormParam("user") String user,
+    public Response validar(@FormParam("email") String email,
                             @FormParam("password") String password) {
         String out = "";
         try {
             UsuarioService service = new UsuarioService();
            // Usuario usuario = controller.validarLista(user, password);
-           List<Usuario> lstUsuarios = service.getAll();
-           
-            Gson gson = new Gson();
+           String respuesta = service.authenticate(email, password);
+           if(respuesta.equals("Autenticación exitosa")){
+                SuccessResponse successResponse = new SuccessResponse("success", "Usuario autenticado con éxito");
+            return Response.status(Response.Status.CREATED).entity(successResponse).build();
+           }else{
+               ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+           }
             
-            String jsonUsuarios = gson.toJson(lstUsuarios);
-            
-            if (lstUsuarios != null) {
-                return Response.ok(jsonUsuarios).build();
-              //  out = String.format("{\"idUsuario\": \"%d\"}", usuario.getIdUsuario());
-            } else {
-                out = "{\"error\": \"Las credenciales no son válidas\"}";
-                return Response.status(Response.Status.UNAUTHORIZED).entity(out).build();
-            }
+
         } catch (Exception e) {
             out = String.format("{\"error\": \"Error interno del servidor: %s\"}", e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(out).build();
@@ -79,8 +77,19 @@ public class UsuarioController {
     
     @Path("register")
     @POST
+//    @Consumes(MediaType.APPLICATION_JSON) 
     @Produces(MediaType.APPLICATION_JSON)
-    public Response registrar(Usuario usuario){
+     @Consumes("application/x-www-form-urlencoded")
+    public Response registrar( @FormParam("email") String email,
+    @FormParam("nombre") String nombre,
+    @FormParam("password") String password,
+    @FormParam("edad") String edad,
+    @FormParam("sexo") String sexo,
+    @FormParam("altura") String altura,
+    @FormParam("peso") String peso,
+    @FormParam("carrera") String carrera,
+    @FormParam("semestre") String semestre){
+        Usuario usuario = new Usuario(email,nombre,password,edad,sexo,altura,peso,carrera,semestre);
         UsuarioService service = new UsuarioService();
         String resultado = service.register(usuario);
         if(resultado.equals("EXITO")){
@@ -88,8 +97,36 @@ public class UsuarioController {
             return Response.status(Response.Status.CREATED).entity(successResponse).build();
         }else{
             ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
-            return Response.status(Response.Status.CREATED).entity(errorResponse).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
         }
     }
+     @Path("validarToken")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response validarToken(@QueryParam("token") String token){
+        
+            UsuarioService service = new UsuarioService();
+           boolean esValido = service.validateToken(token);
+           
+           if(esValido){
+               SuccessResponse successResponse = new SuccessResponse("success", "Token valido");
+            return Response.status(Response.Status.CREATED).entity(successResponse).build();
+           }else{
+               ErrorResponse errorResponse = new ErrorResponse("error", "Token invalido.");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build(); 
+           }
+           
+//            Gson gson = new Gson();
+//            
+//            String jsonUsuarios = gson.toJson(lstUsuarios); 
+//            if (lstUsuarios != null) {
+//                return Response.ok(jsonUsuarios).build();
+//              //  out = String.format("{\"idUsuario\": \"%d\"}", usuario.getIdUsuario());
+//            } else {
+//                out = "{\"error\": \"No existen usuarios registrados.\"}";
+//                return Response.status(Response.Status.UNAUTHORIZED).entity(out).build();
+//            }
+    }
+    
     
 }
