@@ -15,6 +15,7 @@ import java.util.List;
 import org.tinder.services.model.Usuario;
 import org.tinder.services.service.UsuarioService;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.QueryParam;
 import org.tinder.services.model.ErrorResponse;
@@ -39,10 +40,10 @@ public class UsuarioController {
            String respuesta = service.authenticate(email, password);
            if(respuesta.equals("Autenticación exitosa")){
                 SuccessResponse successResponse = new SuccessResponse("success", "Usuario autenticado con éxito");
-            return Response.status(Response.Status.CREATED).entity(successResponse).build();
+            return Response.status(Response.Status.CREATED).entity(successResponse.toString()).build();
            }else{
                ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse.toString()).build();
            }
             
 
@@ -75,28 +76,71 @@ public class UsuarioController {
             }
     }
     
+    
     @Path("register")
     @POST
-//    @Consumes(MediaType.APPLICATION_JSON) 
     @Produces(MediaType.APPLICATION_JSON)
+     // @Consumes("application/application/json")
      @Consumes("application/x-www-form-urlencoded")
-    public Response registrar( @FormParam("email") String email,
+    public Response registrar( 
+          // Usuario usuario  
+    @FormParam("email") String email,
     @FormParam("nombre") String nombre,
     @FormParam("password") String password,
-    @FormParam("edad") String edad,
+    @FormParam("edad") String edad, 
     @FormParam("sexo") String sexo,
     @FormParam("altura") String altura,
     @FormParam("peso") String peso,
     @FormParam("carrera") String carrera,
-    @FormParam("semestre") String semestre){
-        Usuario usuario = new Usuario(email,nombre,password,edad,sexo,altura,peso,carrera,semestre);
+    @FormParam("semestre") String semestre
+    ){
+        
+        try{
+           
+            
+            Usuario usuario = new Usuario(email,nombre,password,edad,sexo,altura,peso,carrera,semestre);
         UsuarioService service = new UsuarioService();
         String resultado = service.register(usuario);
         if(resultado.equals("EXITO")){
              SuccessResponse successResponse = new SuccessResponse("success", "Usuario registrado con éxito");
             return Response.status(Response.Status.CREATED).entity(successResponse).build();
-        }else{
+        }
+        else{
             ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+        }
+        
+        }catch (Exception e) {
+        ErrorResponse errorResponse = new ErrorResponse("error", "Error interno del servidor: " + e.getMessage());
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+        }
+        
+    }
+    
+     @Path("registrar")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response registrar(String json) {
+        Gson gson = new Gson();
+        try {
+            Usuario usuario = gson.fromJson(json, Usuario.class);
+            UsuarioService service = new UsuarioService();
+            String resultado = service.register(usuario);
+            if (resultado.equals("EXITO")) {
+                // SuccessResponse successResponse = new SuccessResponse("success", "Usuario registrado con éxito");
+                   // out = String.format("{\"idUsuario\": \"%d\"}", usuarioEncontrado.getIdUsuario());
+                     String out = "{\"exito\": \"Usuario registrado con exito\"}";
+                return Response.status(Response.Status.CREATED).entity(out).build();
+            } else {
+                ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+            }
+        } catch (JsonSyntaxException e) {
+            ErrorResponse errorResponse = new ErrorResponse("error", "Error en la sintaxis del JSON: " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("error", "Error interno del servidor: " + e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
         }
     }
