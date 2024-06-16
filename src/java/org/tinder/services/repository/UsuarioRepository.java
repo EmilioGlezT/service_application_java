@@ -9,8 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import org.tinder.services.dbConnection.ConnectionMariaDB;
-import org.tinder.services.dbConnection.ConnectionMysql;
+import org.tinder.services.dbConnection.ConnectionDB;
 import org.tinder.services.model.Usuario;
 import org.tinder.services.service.TokenService;
 
@@ -25,7 +24,7 @@ public class UsuarioRepository {
      List<Usuario> listUsers = new ArrayList<>();
      String query = "SELECT * FROM usuarios;";
         try {
-               ConnectionMysql connMysql = new ConnectionMysql();
+               ConnectionDB connMysql = new ConnectionDB();
             Connection conn = connMysql.open();
             PreparedStatement pstm = conn.prepareStatement(query);
             ResultSet rs =  pstm.executeQuery();
@@ -55,7 +54,7 @@ public class UsuarioRepository {
          try{
              
              // INSERCION A LA TABLA USUARIOS
-              ConnectionMysql connMariaDB = new ConnectionMysql();
+              ConnectionDB connMariaDB = new ConnectionDB();
             Connection conn = connMariaDB.open();
            // PreparedStatement pstm = conn.prepareStatement(query);
                PreparedStatement pstm = conn.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -95,7 +94,7 @@ public class UsuarioRepository {
         Usuario usuario = new Usuario();
      String query = "SELECT * FROM usuarios u WHERE u.email LIKE '%"+ email + "%';";
         try {
-               ConnectionMysql connMysql = new ConnectionMysql();
+               ConnectionDB connMysql = new ConnectionDB();
             Connection conn = connMysql.open();
             PreparedStatement pstm = conn.prepareStatement(query);
             ResultSet rs =  pstm.executeQuery();

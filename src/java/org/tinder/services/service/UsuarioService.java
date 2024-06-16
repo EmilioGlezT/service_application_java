@@ -41,11 +41,12 @@ public class UsuarioService {
         if(usuario == null){
             return "No se encontro el usuario en la bd";
         }
+        if (usuario.getPassword() == null) {
+        return "La contraseña del usuario es nula";
+        }
         
         if(BCrypt.checkpw(password, usuario.getPassword())) {
-            String token = tokenService.generateToken(email);
-            return token;
-            // return "Autenticación exitosa";
+             return "Autenticación exitosa";
         } else {
             // Contraseña incorrecta
             return "Contraseña incorrecta";
@@ -58,4 +59,13 @@ public class UsuarioService {
      public boolean validateToken(String token){
          return tokenService.validateToken(token);
      }
+     
+     public String generateToken(String email){
+         return tokenService.generateToken(email);
+           
+     }
+     
+//     public Usuario obtenerUsuarioAleatorio(String genero){
+//         
+//     }
 }

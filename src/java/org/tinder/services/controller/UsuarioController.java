@@ -18,8 +18,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.QueryParam;
+import java.util.Map;
 import org.tinder.services.model.ErrorResponse;
 import org.tinder.services.model.SuccessResponse;
+import org.tinder.services.model.UsuarioCredentials;
 /**
  *
  * @author emilio
@@ -31,19 +33,25 @@ public class UsuarioController {
     @Path("login")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validar(@FormParam("email") String email,
-                            @FormParam("password") String password) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response validar(String json) {
         String out = "";
+         Gson gson = new Gson();
         try {
             UsuarioService service = new UsuarioService();
+            UsuarioCredentials usuario = gson.fromJson(json, UsuarioCredentials.class);
            // Usuario usuario = controller.validarLista(user, password);
-           String respuesta = service.authenticate(email, password);
+           String respuesta = service.authenticate(usuario.getEmail(), usuario.getPassword());
            if(respuesta.equals("Autenticación exitosa")){
-                SuccessResponse successResponse = new SuccessResponse("success", "Usuario autenticado con éxito");
-            return Response.status(Response.Status.CREATED).entity(successResponse.toString()).build();
+               String token = service.generateToken(usuario.getEmail());
+            
+                SuccessResponse successResponse = new SuccessResponse("success", token);
+                String jsonresponse = gson.toJson(successResponse);
+            return Response.status(Response.Status.CREATED).entity(jsonresponse).build();
            }else{
-               ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse.toString()).build();
+               ErrorResponse errorResponse = new ErrorResponse("error", respuesta);
+                String jsonresponse = gson.toJson(errorResponse);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(jsonresponse).build();
            }
             
 
@@ -51,7 +59,6 @@ public class UsuarioController {
             out = String.format("{\"error\": \"Error interno del servidor: %s\"}", e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(out).build();
         }
-      //  return Response.ok(out).build();
     }
     
     @Path("getAll")
@@ -75,47 +82,7 @@ public class UsuarioController {
                 return Response.status(Response.Status.UNAUTHORIZED).entity(out).build();
             }
     }
-    
-    
-    @Path("register")
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-     // @Consumes("application/application/json")
-     @Consumes("application/x-www-form-urlencoded")
-    public Response registrar( 
-          // Usuario usuario  
-    @FormParam("email") String email,
-    @FormParam("nombre") String nombre,
-    @FormParam("password") String password,
-    @FormParam("edad") String edad, 
-    @FormParam("sexo") String sexo,
-    @FormParam("altura") String altura,
-    @FormParam("peso") String peso,
-    @FormParam("carrera") String carrera,
-    @FormParam("semestre") String semestre
-    ){
-        
-        try{
-           
-            
-            Usuario usuario = new Usuario(email,nombre,password,edad,sexo,altura,peso,carrera,semestre);
-        UsuarioService service = new UsuarioService();
-        String resultado = service.register(usuario);
-        if(resultado.equals("EXITO")){
-             SuccessResponse successResponse = new SuccessResponse("success", "Usuario registrado con éxito");
-            return Response.status(Response.Status.CREATED).entity(successResponse).build();
-        }
-        else{
-            ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
-        }
-        
-        }catch (Exception e) {
-        ErrorResponse errorResponse = new ErrorResponse("error", "Error interno del servidor: " + e.getMessage());
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
-        }
-        
-    }
+
     
      @Path("registrar")
     @POST
@@ -128,36 +95,42 @@ public class UsuarioController {
             UsuarioService service = new UsuarioService();
             String resultado = service.register(usuario);
             if (resultado.equals("EXITO")) {
-                // SuccessResponse successResponse = new SuccessResponse("success", "Usuario registrado con éxito");
-                   // out = String.format("{\"idUsuario\": \"%d\"}", usuarioEncontrado.getIdUsuario());
-                     String out = "{\"exito\": \"Usuario registrado con exito\"}";
-                return Response.status(Response.Status.CREATED).entity(out).build();
+                 SuccessResponse successResponse = new SuccessResponse("success", "Usuario registrado con éxito");
+                 String jsonrespuesta = gson.toJson(successResponse);
+             
+                return Response.status(Response.Status.CREATED).entity(jsonrespuesta).build();
             } else {
                 ErrorResponse errorResponse = new ErrorResponse("error", "No fue posible registrar el usuario.");
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+                String jsonrespuesta = gson.toJson(errorResponse);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(jsonrespuesta).build();
             }
         } catch (JsonSyntaxException e) {
             ErrorResponse errorResponse = new ErrorResponse("error", "Error en la sintaxis del JSON: " + e.getMessage());
-            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse.toString()).build();
         } catch (Exception e) {
             ErrorResponse errorResponse = new ErrorResponse("error", "Error interno del servidor: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse.toString()).build();
         }
     }
      @Path("validarToken")
-    @GET
+    @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validarToken(@QueryParam("token") String token){
-        
+      @Consumes(MediaType.APPLICATION_JSON)
+    public Response validarToken(String json){
+            Gson gson = new Gson();
             UsuarioService service = new UsuarioService();
+             Map<String, String> jsonMap = gson.fromJson(json, Map.class);
+             String token = jsonMap.get("token");
            boolean esValido = service.validateToken(token);
            
            if(esValido){
                SuccessResponse successResponse = new SuccessResponse("success", "Token valido");
-            return Response.status(Response.Status.CREATED).entity(successResponse).build();
+               String jsonrespuesta = gson.toJson(successResponse);
+            return Response.status(Response.Status.CREATED).entity(jsonrespuesta).build();
            }else{
                ErrorResponse errorResponse = new ErrorResponse("error", "Token invalido.");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build(); 
+                String jsonrespuesta = gson.toJson(errorResponse);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(jsonrespuesta).build(); 
            }
            
 //            Gson gson = new Gson();
@@ -171,6 +144,13 @@ public class UsuarioController {
 //                return Response.status(Response.Status.UNAUTHORIZED).entity(out).build();
 //            }
     }
+    
+//    @Path("obtenerUsuarioRandom")
+//    @GET
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response obtenerUsuarioAleatorio(@QueryParam("genero") String genero){
+//        
+//    }
     
     
 }
